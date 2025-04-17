@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x  # Enable debug mode
 cd "$(dirname "$0")"
 
 # Prevent parallel execution
