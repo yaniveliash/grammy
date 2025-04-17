@@ -1,3 +1,5 @@
 .venv
 config.yaml
 .runtime_seed.json
+__pycache__/
+*.pyc
