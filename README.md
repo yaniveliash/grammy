@@ -11,6 +11,8 @@
 - SQLite database for tracking users and history
 - Configurable through YAML file
 - Customizable mobile device simulation
+- Timezone-aware logic for accurate daily tracking and reporting
+- Tracks whether the bot is currently running via a status table
 - Runs via cron or manually with `--now` override
 
 ---
@@ -24,11 +26,28 @@
    pip install -r requirements.txt
    ```
 
-2. **Edit your `config.yaml`:**
+2. **Create and Edit your `config.yaml`:**
+
+   Copy the provided config.yaml.default to config.yaml, and fill in your personal credentials, target accounts, limits, and other settings.
+
+   This ensures you:
+   * Keep a clean default config for reference
+   * Avoid merge conflicts when pulling updates from the repository
+
+   ```bash
+   cp config.yaml.default config.yaml
+   ```
+
    Define your credentials, limits, target accounts, sleep intervals, comments, and (optionally) your device profile.
 
+   Include a timezone (optional, defaults to UTC):
+   ```yaml
+   timing:
+     timezone: "Asia/Jerusalem"
+   ```
+
 3. **Create your execution script:**
-   Make sure `run.sh` runs `main.py` and prevents overlapping executions.
+   Make sure `run.sh` runs the bot using the Python module and prevents overlapping executions.
 
 4. **Schedule execution:**
    Add `run.sh` to your crontab to run every minute:
@@ -42,6 +61,11 @@
    ./run.sh --now
    ```
 
+   You can also bypass daily interaction limits:
+   ```bash
+   ./run.sh --now --force
+   ```
+
 ---
 
 ## 📱 Device Emulation
@@ -49,11 +73,18 @@ You can optionally specify your own device profile to simulate a real phone. If 
 
 ---
 
-## 📋 Housekeeping
-Run this script to check daily interaction stats:
+## 📋 Reports & Housekeeping
+Run the report script to check current usage and bot status:
 ```bash
-python3 housekeeping_report.py
+python3 report.py
 ```
+
+### Output includes:
+- Bot status (running/idle with timestamp)
+- Today's likes, comments, and total interactions
+- Interacted usernames (today/all-time/ignored)
+
+Timezone-aware reporting ensures accurate filtering even when running near UTC boundaries.
 
 ---
 
