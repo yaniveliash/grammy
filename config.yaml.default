@@ -1,0 +1,60 @@
+instagram:
+  username: "your_username"
+  password: "your_password"
+  totp_enabled: true
+  totp_secret: "BASE32_TOTP_SECRET"
+
+paths:
+  db_path: "/path/to/db/bot.db"
+  logs_path: "/path/to/logs"
+  device_profile: "/path/to/auto/generated/random/device.json" # Optional
+
+limits:
+  daily_interactions: 100
+  daily_likes: 100
+  daily_comments: 100
+  max_likes_per_user: 1
+  max_comments_per_user: 1
+
+targets:
+  accounts:
+    - "account_1"
+    - "account_2"
+    - "account_3"
+
+timing:
+  min_sleep: 30
+  max_sleep: 90
+  run_time: "09:00" # preferred time to run
+  run_time_random_window: 60 # +/- 60 minutes (default if omitted)
+  timezone: "Asia/Jerusalem" # Optional
+
+comments:
+  - Awesome!
+  - Love this!
+  - Such a great post!
+  - Super cool!
+  - This is awesome!
+  - 🔥🔥🔥
+  - Nice work!
+  - Looks amazing!
+  - Beautiful!
+  - So inspiring!
+  - Great vibe!
+  - Well done!
+  - I really like this!
+  - Cool shot!
+  - 👏👏👏
+
+# Optional device profile if you want to simulate your real phone
+# device:
+#   app_version: "290.0.0.28.75"
+#   android_version: 31
+#   android_release: "12.0"
+#   dpi: "480dpi"
+#   resolution: "1440x3088"
+#   manufacturer: "Samsung"
+#   device: "SM-S908E"
+#   model: "Galaxy S22 Ultra"
+#   cpu: "exynos2200"
+```
