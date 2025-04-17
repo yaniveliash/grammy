@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Grammy logo" width="300"/>
+</p>
+
 # 📸 Grammy – Instagram Growth Bot
 
 **Grammy** is your smart assistant for organic Instagram growth. It interacts daily with like-minded users who comment on major photography and nature-related accounts, leaving friendly comments and likes. All interactions are tracked to prevent duplication and respect daily interaction limits.
