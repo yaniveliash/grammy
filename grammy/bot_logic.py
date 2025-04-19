@@ -1,26 +1,68 @@
 import logging
 import random
 import time
+import sys
+from datetime import datetime, time as dt_time, timezone
 from instagrapi import Client
+from instagrapi.exceptions import LoginRequired, ChallengeRequired
+from grammy.telegram_notify import TelegramNotifier
+from grammy.utils import get_local_interaction_totals
+import zoneinfo
 
 def log_sleep(min_sleep: float, max_sleep: float):
     sleep_time = random.uniform(min_sleep, max_sleep)
     logging.info(f"Sleeping for {sleep_time:.2f} seconds")
     time.sleep(sleep_time)
 
+def log_progress(conn, timezone_name, limits):
+    comments_done, likes_done, interactions_done = get_local_interaction_totals(conn, timezone_name)
+    logging.info(
+        "Progress - Comments: %d/%d, Likes: %d/%d, Total Interactions: %d/%d",
+        comments_done, limits['daily_comments'],
+        likes_done, limits['daily_likes'],
+        interactions_done, limits['daily_interactions']
+    )
+    return comments_done, likes_done, interactions_done
+
 def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
-            comments_done: int, likes_done: int, interactions_done: int,
-            force_run: bool = False):
-    cl.delay_range = [config['timing']['min_sleep'], config['timing']['max_sleep']]
+            force_run: bool = False, notifier: TelegramNotifier = None, start_time: datetime = None):
+    tz_name = config['timing']['timezone']
     c = conn.cursor()
     random.shuffle(config['targets']['accounts'])
 
+    comments_done, likes_done, interactions_done = log_progress(conn, tz_name, limits)
+    progress_counter = 0
+
+    verbosity = config.get('telegram', {}).get('verbosity', 'all')
+
+    def notify(message, level='info'):
+        if notifier and (verbosity == 'all' or level == 'error'):
+            notifier.send(message)
+
+    notify(f"🚀 Bot started\nProgress so far: 💬 {comments_done}/{limits['daily_comments']}, ❤️ {likes_done}/{limits['daily_likes']}, 📏 {interactions_done}/{limits['daily_interactions']}")
+
     for target_account in config['targets']['accounts']:
-        if not force_run and interactions_done >= limits['daily_interactions']:
+        comments_done, likes_done, interactions_done = get_local_interaction_totals(conn, tz_name)
+        if not force_run and (interactions_done >= limits['daily_interactions'] or \
+            (likes_done >= limits['daily_likes'] and comments_done >= limits['daily_comments'])):
             break
 
         logging.info("Targeting account: %s", target_account)
-        user_id = cl.user_id_from_username(target_account)
+        try:
+            user_id = cl.user_id_from_username(target_account)
+        except ChallengeRequired as e:
+            message = f"🚨 Challenge required for account: `{target_account}`. Bot will stop."
+            logging.error(message)
+            notify(message, level='error')
+            sys.exit(1)
+        except LoginRequired as e:
+            logging.error("❌ Login required: session expired or invalid. Stopping bot.")
+            notify("❌ Login required. Bot session invalid. Stopping bot.", level='error')
+            sys.exit(1)
+        except Exception as e:
+            logging.warning("Failed to get user_id for %s: %s", target_account, e)
+            continue
+
         medias = cl.user_medias(user_id, amount=5)
         if not medias:
             logging.info("No posts found for %s", target_account)
@@ -34,7 +76,9 @@ def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
 
         random.shuffle(commenters)
         for commenter in commenters:
-            if not force_run and interactions_done >= limits['daily_interactions']:
+            comments_done, likes_done, interactions_done = get_local_interaction_totals(conn, tz_name)
+            if not force_run and (interactions_done >= limits['daily_interactions'] or \
+                (likes_done >= limits['daily_likes'] and comments_done >= limits['daily_comments'])):
                 break
 
             username = commenter.user.username
@@ -45,6 +89,15 @@ def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
 
             try:
                 user_info = cl.user_info_by_username(username)
+            except ChallengeRequired as e:
+                message = f"🚨 Challenge required when accessing user `{username}`. Stopping bot."
+                logging.error(message)
+                notify(message, level='error')
+                sys.exit(1)
+            except LoginRequired as e:
+                logging.error("❌ Login required during user fetch. Stopping bot.")
+                notify("❌ Login required during user fetch. Stopping bot.", level='error')
+                sys.exit(1)
             except Exception as e:
                 logging.warning("Error fetching user %s: %s", username, e)
                 continue
@@ -68,21 +121,15 @@ def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
                 try:
                     cl.media_comment(comment_post.id, comment)
                     logging.info("Commented on %s: %s", username, comment)
-                    comments_done += 1
-                    interactions_done += 1
                     c.execute("INSERT INTO interactions VALUES (?, ?, ?, CURRENT_TIMESTAMP)", (username, comment_post.id, 'comment'))
                     conn.commit()
                 except Exception as e:
                     logging.warning("Failed to comment on %s: %s", username, e)
 
-            log_sleep(config['timing']['min_sleep'], config['timing']['max_sleep'])
-
             if (force_run or likes_done < limits['daily_likes']) and limits['max_likes_per_user'] > 0 and (force_run or interactions_done < limits['daily_interactions']):
                 try:
                     cl.media_like(like_post.id)
                     logging.info("Liked post for %s", username)
-                    likes_done += 1
-                    interactions_done += 1
                     c.execute("INSERT INTO interactions VALUES (?, ?, ?, CURRENT_TIMESTAMP)", (username, like_post.id, 'like'))
                     conn.commit()
                 except Exception as e:
@@ -91,6 +138,11 @@ def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
             c.execute("INSERT OR IGNORE INTO users VALUES (?, ?, CURRENT_TIMESTAMP)", (username, 0))
             conn.commit()
 
+            progress_counter += 1
+            if progress_counter % 10 == 0:
+                log_progress(conn, tz_name, limits)
+
             log_sleep(config['timing']['min_sleep'], config['timing']['max_sleep'])
 
+    comments_done, likes_done, interactions_done = get_local_interaction_totals(conn, tz_name)
     logging.info("Finished for today. Total interactions: %s", interactions_done)
