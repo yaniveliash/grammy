@@ -20,11 +20,13 @@ You are solely responsible for any consequences resulting from using this tool. 
 - 💬 Likes and comments on posts from people interested in nature and photography
 - ⏰ Runs at random times during your set hours
 - 🔒 Supports 2FA with TOTP codes
-- 💾 Remembers your login and device (like a real phone!)
+- 📀 Remembers your login and device (like a real phone!)
 - 🧠 Avoids repeating actions or spamming the same users
 - 🌍 Respects your local timezone and daily limits
-- 🗂 Saves everything in a lightweight local database
+- 🗂️ Saves everything in a lightweight local database
 - 📊 Shows what it did today via a simple report
+- 📢 Sends alerts to Telegram if your bot is blocked by Instagram (optional)
+- 🔇 Supports quiet mode for less verbose logging (optional)
 
 ---
 
@@ -54,11 +56,35 @@ timing:
   timezone: "Asia/Jerusalem"
   start_run_time: "08:00"
   end_run_time: "14:00"
+
+verbosity: "info"  # Can be "debug", "info", "warning", or "error"
 ```
 
 You can also add a **device profile** if you want Grammy to pretend it's your real phone.
 
-### 3. **Create the Runner Script**
+---
+
+### 3. **Enable Telegram Notifications (Optional)**
+If you want real-time alerts (e.g., when Instagram blocks your actions):
+
+1. Create a Telegram bot via [@BotFather](https://t.me/BotFather) and get the `bot_token`.
+2. Get your `chat_id`:
+   - Open [https://api.telegram.org/bot<your_bot_token>/getUpdates](https://api.telegram.org/bot<your_bot_token>/getUpdates)
+   - Send a message to your bot and find your `chat.id` in the JSON response
+3. Add this to your `config.yaml`:
+
+```yaml
+telegram:
+  enabled: true
+  bot_token: "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+  chat_id: "123456789"
+```
+
+Now Grammy will send Telegram alerts if it encounters login blocks or other critical errors.
+
+---
+
+### 4. **Create the Runner Script**
 Make sure you have a file named `run.sh`:
 ```bash
 #!/bin/bash
@@ -71,20 +97,29 @@ Make it executable:
 chmod +x run.sh
 ```
 
-### 4. **Schedule It Automatically**
+---
+
+### 5. **Schedule It Automatically**
 Let Grammy decide when to run each day. Add this to your crontab:
 ```bash
 * * * * * /path/to/grammy/run.sh >> /dev/null 2>&1
 ```
 Grammy will check every minute and only run during the window you chose.
 
-### 5. **Run It Now (If You Want)**
+---
+
+### 6. **Run It Now (If You Want)**
 ```bash
 ./run.sh --now
 ```
 To ignore limits and run everything:
 ```bash
 ./run.sh --now --force
+```
+
+To increase logging detail temporarily (overrides config):
+```bash
+./run.sh --now --verbose debug
 ```
 
 ---
@@ -100,6 +135,7 @@ Run this command to get a report:
 ./report.sh
 ```
 (This is a wrapper around `report.py` for convenience)
+
 You'll see:
 - ✅ If the bot is currently running
 - 💬 Number of likes, comments, and users today
@@ -107,7 +143,7 @@ You'll see:
 
 ---
 
-## 🧠 Smart & Safe By Design
+## 🧐 Smart & Safe By Design
 Grammy is built to avoid Instagram's radar:
 - Mimics real human timing
 - Remembers who it interacted with
@@ -120,4 +156,5 @@ Grammy is built to avoid Instagram's radar:
 ## ❤️ Built On
 - [instagrapi](https://github.com/adw0rd/instagrapi)
 
-Grammy is private, local, and yours. No cloud. No API keys. Just safe, organic growth. 🌱
+Grammy is private, local, and yours. No cloud. No API keys. Just organic growth. 🌱
+
