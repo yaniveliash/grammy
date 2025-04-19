@@ -1,31 +1,46 @@
-import json
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import yaml
-from pathlib import Path
-from datetime import datetime, timedelta
 import random
 
 def load_config(path="config.yaml"):
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
-def resolve_runtime_seed(config, seed_path=".runtime_seed.json", force_now=False):
-    now = datetime.now()
-    runtime_file = Path(seed_path)
 
-    run_time = config["timing"].get("run_time", "02:00")
-    window = int(config["timing"].get("run_time_random_window", 60))
+def get_timezone(config):
+    tz_name = config.get("timing", {}).get("timezone", "UTC")
+    try:
+        return ZoneInfo(tz_name)
+    except Exception:
+        print(f"[WARN] Invalid timezone '{tz_name}', defaulting to UTC")
+        return ZoneInfo("UTC")
 
-    if runtime_file.exists():
-        with open(runtime_file, "r") as f:
-            runtime_seed = json.load(f)
-        if runtime_seed.get("date") == now.strftime("%Y-%m-%d"):
-            return datetime.strptime(f"{now.date()} {runtime_seed['target']}", "%Y-%m-%d %H:%M")
 
-    base_hour, base_minute = map(int, run_time.split(":"))
-    base_time = datetime(now.year, now.month, now.day, base_hour, base_minute)
-    offset = random.randint(-window, window)
-    target_run = base_time + timedelta(minutes=offset)
-    with open(runtime_file, "w") as f:
-        json.dump({"date": now.strftime("%Y-%m-%d"), "target": target_run.strftime("%H:%M")}, f)
+def is_within_run_window(config):
+    tz = get_timezone(config)
+    now_local = datetime.now(timezone.utc).astimezone(tz)
 
-    return target_run
+    start_str = config.get("timing", {}).get("start_run_time")
+    end_str = config.get("timing", {}).get("end_run_time")
+    start_jitter = int(config.get("timing", {}).get("start_random_window", 0))
+    end_jitter = int(config.get("timing", {}).get("end_random_window", 0))
+
+    if not start_str or not end_str:
+        print("[INFO] No run window defined – running immediately.")
+        return True
+
+    base_start = datetime.strptime(start_str, "%H:%M").replace(
+        year=now_local.year, month=now_local.month, day=now_local.day, tzinfo=tz
+    )
+    base_end = datetime.strptime(end_str, "%H:%M").replace(
+        year=now_local.year, month=now_local.month, day=now_local.day, tzinfo=tz
+    )
+
+    offset_start = timedelta(minutes=random.randint(-start_jitter, start_jitter))
+    offset_end = timedelta(minutes=random.randint(-end_jitter, end_jitter))
+
+    randomized_start = base_start + offset_start
+    randomized_end = base_end + offset_end
+
+    return randomized_start <= now_local <= randomized_end

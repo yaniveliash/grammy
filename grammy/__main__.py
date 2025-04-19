@@ -4,8 +4,8 @@ from datetime import datetime
 import zoneinfo
 from instagrapi import Client
 
-from grammy.config_loader import load_config, resolve_runtime_seed
-from grammy.auth_device import prepare_device, authenticate
+from grammy.config_loader import load_config, is_within_run_window
+from grammy.auth_device import authenticate
 from grammy.database_ops import init_db, set_status, get_daily_counts_range
 from grammy.bot_logic import run_bot
 
@@ -18,14 +18,14 @@ if __name__ == "__main__":
 
     config = load_config()
     tz = zoneinfo.ZoneInfo(config.get("timezone", "UTC"))
-    runtime = resolve_runtime_seed(config, seed_path=args.seed_path, force_now=args.now)
-
-    now_str = datetime.now(tz).strftime("%H:%M")
-    if not args.now and now_str != runtime.strftime("%H:%M"):
-        print(f"⏰ Not the scheduled time yet: {now_str} != {runtime.strftime('%H:%M')}")
-        exit(0)
-    elif args.now:
+    if not args.now:
+        if not is_within_run_window(config):
+            print("❌ Not within allowed run window. Exiting.")
+            exit(0)
+        print("✅ Allowed run window – proceeding")
+    else:
         print("⏩ Forced run: skipping time check")
+
 
     comment_bank = config.get("comments", [])
     if not comment_bank:
@@ -57,8 +57,7 @@ if __name__ == "__main__":
         logging.info("⚠️  Forcing run despite interaction limits.")
 
     cl = Client()
-    prepare_device(cl, config)
-    authenticate(cl, config)
+    authenticate(cl, config, conn)
 
     try:
         set_status(conn, True)
