@@ -30,9 +30,4 @@ fi
 # Ensure root project directory is in PYTHONPATH
 export PYTHONPATH="$PWD"
 
-# Print debug info
-echo "🐍 Python version: $(python3 --version)"
-echo "📁 Python path: $PYTHONPATH"
-echo "📦 Packages installed:" && pip list
-
 exec python3 -m grammy "$@"
