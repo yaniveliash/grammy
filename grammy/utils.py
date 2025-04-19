@@ -15,7 +15,9 @@ def get_local_interaction_totals(conn, tz_name: str):
     try:
         tz = zoneinfo.ZoneInfo(tz_name)
     except Exception:
-        logging.warning(f"[WARNING] Invalid timezone in config: {tz_name}. Defaulting to UTC.")
+        logging.warning(
+            f"[WARNING] Invalid timezone in config: {tz_name}. Defaulting to UTC."
+        )
         tz = timezone.utc
 
     today_local = datetime.now(tz).date()
@@ -28,13 +30,13 @@ def get_local_interaction_totals(conn, tz_name: str):
     c = conn.cursor()
     c.execute(
         "SELECT COUNT(*) FROM interactions WHERE timestamp >= ? AND timestamp <= ? AND type = 'comment'",
-        (start_utc, end_utc)
+        (start_utc, end_utc),
     )
     comments_done = c.fetchone()[0]
 
     c.execute(
         "SELECT COUNT(*) FROM interactions WHERE timestamp >= ? AND timestamp <= ? AND type = 'like'",
-        (start_utc, end_utc)
+        (start_utc, end_utc),
     )
     likes_done = c.fetchone()[0]
 

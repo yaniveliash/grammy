@@ -4,7 +4,7 @@
 
 # 📸 Grammy – Your Friendly Instagram Growth Assistant
 
-**Grammy** helps you grow your Instagram account naturally by interacting with real people who comment on big accounts like NatGeo, BBC Earth, and National Park Service. It likes and replies to their posts in a human-like way — safely and slowly.
+**Grammy** helps you grow your Instagram account naturally by interacting with real people who comment on big accounts that share the same interest as your account. It likes and replies to their followers posts in a human-like way — safely and slowly, but not so smartly - there is a big chances that it will comment in a manner that won't match the content 😅.
 
 ---
 
@@ -56,8 +56,6 @@ timing:
   timezone: "Asia/Jerusalem"
   start_run_time: "08:00"
   end_run_time: "14:00"
-
-verbosity: "info"  # Can be "debug", "info", "warning", or "error"
 ```
 
 You can also add a **device profile** if you want Grammy to pretend it's your real phone.
@@ -76,6 +74,7 @@ If you want real-time alerts (e.g., when Instagram blocks your actions):
 ```yaml
 telegram:
   enabled: true
+  verbosity: "all" # or "errors_only"
   bot_token: "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
   chat_id: "123456789"
 ```

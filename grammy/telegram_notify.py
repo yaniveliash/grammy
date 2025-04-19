@@ -1,6 +1,7 @@
 import logging
 import requests
 
+
 class TelegramNotifier:
     def __init__(self, bot_token: str, chat_id: str, enabled: bool = True):
         self.bot_token = bot_token
@@ -15,7 +16,7 @@ class TelegramNotifier:
             payload = {
                 "chat_id": self.chat_id,
                 "text": message,
-                "parse_mode": "Markdown"
+                "parse_mode": "Markdown",
             }
             response = requests.post(url, json=payload, timeout=10)
             if not response.ok:

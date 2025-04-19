@@ -25,4 +25,5 @@ fi
 # Ensure root project directory is in PYTHONPATH
 export PYTHONPATH="$PWD"
 
-exec python3 report.py
+# Pass all CLI arguments through to the Python script
+exec python3 report.py "$@"

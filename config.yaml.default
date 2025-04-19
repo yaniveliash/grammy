@@ -31,6 +31,13 @@ timing:
   end_random_window: 30       # ±30 minutes
   timezone: "Asia/Jerusalem"
 
+batch:
+  enabled: false
+  size_min: 5
+  size_max: 15
+  sleep_min: 300
+  sleep_max: 600
+
 comments:
   - Awesome!
   - Love this!

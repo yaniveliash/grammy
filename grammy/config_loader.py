@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 import yaml
 import random
 
+
 def load_config(path="config.yaml"):
     with open(path, "r") as f:
         return yaml.safe_load(f)
