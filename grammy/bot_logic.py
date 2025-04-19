@@ -11,6 +11,7 @@ def log_sleep(min_sleep: float, max_sleep: float):
 def run_bot(cl: Client, config: dict, conn, comment_bank: list, limits: dict,
             comments_done: int, likes_done: int, interactions_done: int,
             force_run: bool = False):
+    cl.delay_range = [config['timing']['min_sleep'], config['timing']['max_sleep']]
     c = conn.cursor()
     random.shuffle(config['targets']['accounts'])
 

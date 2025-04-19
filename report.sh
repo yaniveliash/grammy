@@ -1,11 +1,6 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Prevent parallel execution
-if pgrep -f "python3 -m grammy" > /dev/null; then
-  exit 0
-fi
-
 # Create .venv if it doesn't exist
 if [ ! -d .venv ]; then
   echo "🛠️ Creating virtual environment..."
@@ -30,4 +25,4 @@ fi
 # Ensure root project directory is in PYTHONPATH
 export PYTHONPATH="$PWD"
 
-exec python3 -m grammy "$@"
+exec python3 report.py

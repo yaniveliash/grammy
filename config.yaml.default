@@ -25,9 +25,11 @@ targets:
 timing:
   min_sleep: 30
   max_sleep: 90
-  run_time: "09:00" # preferred time to run
-  run_time_random_window: 60 # +/- 60 minutes (default if omitted)
-  timezone: "Asia/Jerusalem" # Optional
+  start_run_time: "08:00"
+  start_random_window: 20     # ±20 minutes
+  end_run_time: "14:00"
+  end_random_window: 30       # ±30 minutes
+  timezone: "Asia/Jerusalem"
 
 comments:
   - Awesome!

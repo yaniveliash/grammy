@@ -30,6 +30,12 @@ def init_db(db_path: str):
         last_updated TIMESTAMP NOT NULL
     )
     """)
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS session (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        session_json TEXT
+    )
+    """)
 
     conn.commit()
     return conn
