@@ -6,10 +6,14 @@ from instagrapi import Client
 
 from grammy.config_loader import load_config, is_within_run_window
 from grammy.auth_device import authenticate
-from grammy.database_ops import init_db, set_status, get_daily_counts_range
+from grammy.database_ops import init_db, set_status
 from grammy.bot_logic import run_bot
+from grammy.telegram_notify import TelegramNotifier
+from grammy.utils import get_local_interaction_totals
 
 if __name__ == "__main__":
+    start_time = datetime.now()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--now", action="store_true", help="Force run ignoring schedule")
     parser.add_argument("--force", action="store_true", help="Ignore daily interaction limits")
@@ -18,6 +22,7 @@ if __name__ == "__main__":
 
     config = load_config()
     tz = zoneinfo.ZoneInfo(config.get("timezone", "UTC"))
+
     if not args.now:
         if not is_within_run_window(config):
             print("❌ Not within allowed run window. Exiting.")
@@ -25,7 +30,6 @@ if __name__ == "__main__":
         print("✅ Allowed run window – proceeding")
     else:
         print("⏩ Forced run: skipping time check")
-
 
     comment_bank = config.get("comments", [])
     if not comment_bank:
@@ -45,10 +49,7 @@ if __name__ == "__main__":
     db_path = config['paths']['db_path']
     conn = init_db(db_path)
 
-    start_of_day = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day.replace(hour=23, minute=59, second=59)
-    total, comments, likes = get_daily_counts_range(conn, start_of_day, end_of_day)
-    logging.info("Already done today - Likes: %d, Comments: %d, Total: %d", likes, comments, total)
+    comments, likes, total = get_local_interaction_totals(conn, config.get("timezone", "UTC"))
 
     if not args.force and total >= config['limits']['daily_interactions']:
         logging.info("Reached daily interaction limit. Exiting.")
@@ -59,6 +60,13 @@ if __name__ == "__main__":
     cl = Client()
     authenticate(cl, config, conn)
 
+    telegram_conf = config.get("telegram", {})
+    notifier = TelegramNotifier(
+        bot_token=telegram_conf.get("bot_token"),
+        chat_id=telegram_conf.get("chat_id"),
+        enabled=telegram_conf.get("enabled", False)
+    )
+
     try:
         set_status(conn, True)
         run_bot(
@@ -67,16 +75,22 @@ if __name__ == "__main__":
             conn=conn,
             comment_bank=comment_bank,
             limits=config['limits'],
-            comments_done=comments,
-            likes_done=likes,
-            interactions_done=total,
-            force_run=args.force
+            force_run=args.force,
+            notifier=notifier,
+            start_time=start_time
         )
     except KeyboardInterrupt:
         logging.warning("Interrupted by user (Ctrl+C)")
     except Exception as e:
         logging.exception("Unhandled exception: %s", e)
     finally:
+        comments_done, likes_done, interactions_done = get_local_interaction_totals(conn, config.get("timezone", "UTC"))
+        elapsed = datetime.now() - start_time
+        verbosity = config.get("telegram", {}).get("verbosity", "all")
+        if notifier and verbosity == "all":
+            notifier.send(
+                f"🚀 Bot Ended\nToday's totals: 💬 {comments_done}/{limits['daily_comments']}, ❤️ {likes_done}/{limits['daily_likes']}, 📏 {interactions_done}/{limits['daily_interactions']}"
+            )
         conn.close()
         set_status(init_db(db_path), False)
         logging.info("Bot marked as not running.")

@@ -1,7 +1,7 @@
 instagram:
   username: "your_username"
   password: "your_password"
-  totp_enabled: true
+  totp_enabled: false
   totp_secret: "BASE32_TOTP_SECRET"
 
 paths:
@@ -60,3 +60,9 @@ comments:
 #   model: "Galaxy S22 Ultra"
 #   cpu: "exynos2200"
 ```
+
+telegram:
+  enabled: false
+  verbosity: all # or errors_only
+  bot_token: "your_telegram_bot_token"
+  chat_id: "your_chat_id_or_user_id"
