@@ -77,7 +77,6 @@ def get_random_media_with_commenters(cl, user_id, media_amount=5, comment_pages=
     random.shuffle(medias)
     target_media = random.choice(medias)
 
-    # Paginate through comments
     max_id = None
     for _ in range(comment_pages):
         try:
@@ -107,11 +106,13 @@ def run_bot(
     tz_name = config["timing"]["timezone"]
     c = conn.cursor()
     random.shuffle(config["targets"]["accounts"])
+    notified_exit = False
 
     if is_outside_time_window(config):
         logging.info("⏰ Current time is outside of allowed timeframe. Exiting.")
-        if notifier:
+        if notifier and not notified_exit:
             notifier.send("⏰ Bot run skipped – outside of allowed timeframe.")
+            notified_exit = True
         return
 
     comments_done, likes_done, interactions_done = log_progress(conn, tz_name, limits)
@@ -148,6 +149,11 @@ def run_bot(
                 likes_done,
                 comments_done,
             )
+            if notifier and not notified_exit:
+                notifier.send(
+                    f"✅ Bot stopped due to reaching limit. Interactions: {interactions_done}, Likes: {likes_done}, Comments: {comments_done}"
+                )
+                notified_exit = True
             break
 
         logging.info("Targeting account: %s", target_account)
@@ -197,6 +203,11 @@ def run_bot(
                     likes_done,
                     comments_done,
                 )
+                if notifier and not notified_exit:
+                    notifier.send(
+                        f"✅ Bot stopped due to reaching limit. Interactions: {interactions_done}, Likes: {likes_done}, Comments: {comments_done}"
+                    )
+                    notified_exit = True
                 break
 
             username = commenter.user.username
@@ -265,7 +276,9 @@ def run_bot(
             ):
                 try:
                     cl.media_like(like_post.id)
-                    logging.info("Liked post for %s", username)
+                    logging.info(
+                        "Liked post by %s – Media ID: %s", username, like_post.id
+                    )
                     c.execute(
                         "INSERT INTO interactions VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
                         (username, like_post.id, "like"),
@@ -304,3 +317,6 @@ def run_bot(
         conn, tz_name
     )
     logging.info("Finished for today. Total interactions: %s", interactions_done)
+    if notifier and not notified_exit:
+        notifier.send(f"🔚 Bot finished. Total interactions today: {interactions_done}")
+        notified_exit = True

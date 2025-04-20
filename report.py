@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Instagram Bot Log Summary Report
-Usage: report.py [--range Nd|Nw]
-"""
-
 import argparse
 import re
 import yaml
@@ -12,6 +6,7 @@ import zoneinfo
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
+import sqlite3
 
 
 def parse_args():
@@ -53,9 +48,6 @@ def parse_range(range_arg: str) -> int:
     n = int(m.group("n"))
     unit = m.group("unit")
     return n if unit == "d" else n * 7
-
-
-import sqlite3
 
 
 def main():
