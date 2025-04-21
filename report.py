@@ -28,17 +28,6 @@ def parse_args():
         help="Max users to display for all-time and ignored lists",
     )
     return parser.parse_args()
-    parser = argparse.ArgumentParser(
-        description="Generate a log summary report for the Instagram bot"
-    )
-    parser.add_argument(
-        "--range",
-        dest="range_arg",
-        type=str,
-        default="1d",
-        help="Time range: Nd (days) or Nw (weeks), e.g., 3d or 2w",
-    )
-    return parser.parse_args()
 
 
 def parse_range(range_arg: str) -> int:
@@ -103,6 +92,8 @@ def main():
         with path.open("r") as f:
             for line in f:
                 if "- INFO - Commented on" in line:
+                    success += 1
+                elif "- INFO - Liked post by" in line:
                     success += 1
                 elif "- WARNING -" in line:
                     warnings += 1

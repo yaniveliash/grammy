@@ -11,6 +11,12 @@ def log_sleep(min_sleep: float, max_sleep: float):
     time.sleep(sleep_time)
 
 
+def log_batch_sleep(min_sleep: float, max_sleep: float):
+    sleep_time = random.uniform(min_sleep, max_sleep)
+    logging.info(f"Batch sleep for {sleep_time:.2f} seconds")
+    time.sleep(sleep_time)
+
+
 def get_local_interaction_totals(conn, tz_name: str):
     try:
         tz = zoneinfo.ZoneInfo(tz_name)

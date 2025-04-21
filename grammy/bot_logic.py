@@ -1,25 +1,12 @@
 import logging
 import random
-import time
 import sys
-from datetime import datetime, time as dt_time, timezone, timedelta
+from datetime import datetime, time as dt_time, timedelta
 from instagrapi import Client
 from instagrapi.exceptions import LoginRequired, ChallengeRequired
 from grammy.telegram_notify import TelegramNotifier
-from grammy.utils import get_local_interaction_totals
+from grammy.utils import get_local_interaction_totals, log_sleep, log_batch_sleep
 import zoneinfo
-
-
-def log_sleep(min_sleep: float, max_sleep: float):
-    sleep_time = random.uniform(min_sleep, max_sleep)
-    logging.info(f"Sleeping for {sleep_time:.2f} seconds")
-    time.sleep(sleep_time)
-
-
-def log_batch_sleep(min_sleep: float, max_sleep: float):
-    sleep_time = random.uniform(min_sleep, max_sleep)
-    logging.info(f"Batch sleep for {sleep_time:.2f} seconds")
-    time.sleep(sleep_time)
 
 
 def log_progress(conn, timezone_name, limits):

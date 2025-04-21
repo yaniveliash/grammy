@@ -22,4 +22,4 @@ class TelegramNotifier:
             if not response.ok:
                 logging.warning(f"Failed to send Telegram message: {response.text}")
         except Exception as e:
-            logging.exception("Error sending Telegram message")
+            logging.exception(f"Error sending Telegram message: {e}")
